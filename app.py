@@ -10,12 +10,16 @@ from nltk.tokenize import word_tokenize
 # Download NLTK data if not already present
 try:
     nltk.data.find('corpora/stopwords')
-except nltk.downloader.DownloadError:
+except LookupError:
     nltk.download('stopwords')
 try:
     nltk.data.find('tokenizers/punkt')
-except nltk.downloader.DownloadError:
+except LookupError:
     nltk.download('punkt')
+try:
+    nltk.data.find('tokenizers/punkt_tab') # Add this line to download punkt_tab
+except LookupError:
+    nltk.download('punkt_tab')
 
 stop_words = set(stopwords.words('english'))
 
@@ -56,11 +60,15 @@ def preprocess_text(text):
 # --- Load Models and Vectorizer ---
 @st.cache_resource # Cache resource to avoid re-loading on every rerun
 def load_resources():
-    # drive.mount('/content/drive', force_remount=True) # Removed: drive.mount() is for Colab's IPython kernel and causes issues in standalone app
-    model_save_dir = '/content/drive/MyDrive/Emotion_Models'
+    # The models are copied to the current directory before app.py is run.
+    # So, we don't need to mount Google Drive or specify a Drive path here.
+    model_save_dir = '.' # Load from current directory
 
+    st.info(f"Loading models from: {model_save_dir}")
     loaded_ensemble_model = joblib.load(os.path.join(model_save_dir, 'ensemble_model.joblib'))
+    st.info("Ensemble model loaded.")
     loaded_TfidfVectorizer = joblib.load(os.path.join(model_save_dir, 'TfidfVectorizer.joblib'))
+    st.info("TfidfVectorizer loaded.")
 
     # Assuming unique_emotion was determined during training. Let's recreate it if not explicitly saved.
     emotion_labels = ['sadness', 'anger', 'love', 'surprise', 'fear', 'joy']
@@ -91,4 +99,3 @@ if st.button("Classify Emotion"):
         st.success(f"Predicted Emotion: **{predicted_emotion.capitalize()}**")
     else:
         st.warning("Please enter some text to classify.")
-
